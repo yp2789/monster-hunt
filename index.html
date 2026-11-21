@@ -1,0 +1,375 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>답변 괴물 토벌 작전</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  color-scheme: light;
+  --ink:#3a2e2a; --cream:#fffdf6; --green:#43b97f; --green-d:#2e8a5c;
+  --amber:#f5b93f; --amber-d:#d69a2d; --red:#e0574f; --red-d:#b13d36;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{font-family:"IBM Plex Sans KR",sans-serif;color:var(--ink);background:linear-gradient(#effaf0,#d6f0dc);overflow:hidden;word-break:keep-all;user-select:none}
+.blob{position:fixed;border-radius:50%;pointer-events:none;z-index:0}
+.b1{width:58vh;height:58vh;left:-19vh;top:-16vh;background:radial-gradient(circle at 35% 35%,rgba(67,185,127,.22),rgba(67,185,127,0) 70%)}
+.b2{width:72vh;height:72vh;right:-24vh;bottom:-22vh;background:radial-gradient(circle at 40% 40%,rgba(245,185,63,.2),rgba(245,185,63,0) 70%)}
+.b3{width:36vh;height:36vh;left:52%;top:-12vh;background:radial-gradient(circle at 40% 40%,rgba(67,185,127,.14),rgba(67,185,127,0) 70%)}
+
+header{position:fixed;top:0;left:0;right:0;height:10vh;display:flex;align-items:center;justify-content:space-between;padding:0 3vw;z-index:5}
+header h1{font-family:"Jua";font-weight:400;font-size:4.6vh}
+.hud{display:flex;align-items:center;gap:1.2vw;font-family:"Jua"}
+.pill{background:rgba(255,253,246,.88);border-radius:999px;padding:.6vh 1.8vh;box-shadow:0 3px 0 rgba(58,46,42,.06);font-size:2.5vh;display:flex;align-items:center;gap:1vh}
+.hearts span{font-size:3vh}
+.hearts .lost{filter:grayscale(1);opacity:.3}
+.who .face{width:5vh;height:5vh;border-radius:50%;overflow:hidden;background:#222;border:3px solid #fff}
+.who .face img{width:100%;height:100%;object-fit:cover;object-position:50% 30%;transition:filter .6s}
+
+main{position:relative;z-index:1;height:100%;padding:11vh 3.4vw 13vh}
+.view{display:none;height:100%}
+.view.on{display:flex}
+
+/* 대결 화면 = 답 기계 화면 구조 */
+.stage{gap:3vw;align-items:center}
+.q-col{flex:1.25;display:flex;flex-direction:column;align-items:center;gap:2.2vh}
+.m-col{flex:1;display:flex;flex-direction:column;align-items:center;position:relative;height:70vh;justify-content:center}
+.q-card{width:100%;background:var(--cream);border-radius:4vh;padding:2.6vh 2.4vw 2.8vh;text-align:center;transform:rotate(-1.5deg);box-shadow:0 12px 0 rgba(58,46,42,.05),0 2px 18px rgba(46,138,92,.16)}
+.chip{display:inline-block;font-family:"Jua";font-size:2.3vh;color:#fff;border-radius:999px;padding:.6vh 2vh}
+.chip.amber{background:var(--amber);box-shadow:0 3px 0 var(--amber-d)}
+.chip.green{background:var(--green);box-shadow:0 3px 0 var(--green-d)}
+.chip.red{background:var(--red);box-shadow:0 3px 0 var(--red-d)}
+.q-text{font-family:"Jua";font-size:6.4vh;line-height:1.25;margin-top:1.4vh}
+.evi{display:flex;gap:1.6vw;align-items:stretch;margin-top:2vh;text-align:left}
+.witness{flex:1.2;display:flex;align-items:center;gap:1.2vw}
+.witness .wface{width:10vh;height:10vh;border-radius:50%;overflow:hidden;flex:none;border:4px solid #fff;box-shadow:0 4px 0 rgba(58,46,42,.08)}
+.witness .wface img{width:100%;height:100%;object-fit:cover}
+.bubble{position:relative;background:#fff;border:3px solid var(--ink);border-radius:2.4vh;padding:1.4vh 1.6vh;font-family:"Jua";font-size:2.9vh;line-height:1.35}
+.bubble::before{content:"";position:absolute;left:-1.6vh;top:50%;transform:translateY(-50%);border:1vh solid transparent;border-right:1.6vh solid var(--ink)}
+.bubble .who-n{display:block;font-size:2vh;color:#7a6a64;margin-bottom:.3vh}
+.photo{flex:1;position:relative}
+.photo img{width:100%;height:15vh;object-fit:contain;background:#e9f3df;border-radius:1.8vh;border:.6vh solid #fff;box-shadow:0 4px 12px rgba(58,46,42,.15);transform:rotate(2deg);display:block}
+.photo .tag{position:absolute;left:1vh;top:-1.4vh;font-family:"Jua";font-size:1.9vh;background:var(--ink);color:#fff;border-radius:999px;padding:.3vh 1.2vh;transform:rotate(-3deg)}
+.status{font-family:"Jua";font-size:3.1vh;color:var(--green-d);background:rgba(255,255,255,.78);border-radius:999px;padding:1.2vh 3.6vh;transform:rotate(1deg);box-shadow:0 4px 0 rgba(58,46,42,.07)}
+.status.warn{color:#b8742a}
+.status.bad{color:var(--red-d)}
+.btn{font-family:"Jua";font-size:3.3vh;color:#fff;background:var(--green);border:0;border-radius:3vh;padding:1.7vh 4.4vh;cursor:pointer;box-shadow:0 7px 0 var(--green-d),0 14px 22px rgba(46,138,92,.22)}
+.btn:active{transform:translateY(4px);box-shadow:0 3px 0 var(--green-d)}
+.btn.amber{background:var(--amber);box-shadow:0 7px 0 var(--amber-d),0 14px 22px rgba(214,154,45,.22)}
+.btn.red{background:var(--red);box-shadow:0 7px 0 var(--red-d),0 14px 22px rgba(177,61,54,.22)}
+.btn.ghost{background:var(--cream);color:var(--ink);box-shadow:0 7px 0 #e6dccb}
+.row{display:flex;gap:1.6vw;justify-content:center}
+.hidden{display:none!important}
+.home{width:5.6vh;height:5.6vh;border-radius:50%;border:0;background:rgba(255,253,246,.9);font-size:2.8vh;cursor:pointer;box-shadow:0 3px 0 rgba(58,46,42,.1)}
+.opt{font-family:"Jua";font-size:3.2vh;color:var(--ink);background:var(--cream);border:3px solid var(--ink);border-radius:2.4vh;padding:1.3vh 3.2vh;cursor:pointer;box-shadow:0 6px 0 #e0d6c4}
+.opt:active{transform:translateY(3px);box-shadow:0 3px 0 #e0d6c4}
+.mine{font-family:"Jua";font-size:3vh;background:#fff;border:3px solid var(--green);color:var(--green-d);border-radius:999px;padding:.9vh 3vh}
+.mine b{font-weight:400;font-size:3.6vh;margin-left:1vh}
+
+/* 답변 괴물 (답 기계 몸통) */
+.machine{width:min(32vw,58vh);height:26vh;border-radius:5vh;background:linear-gradient(#5bc893 0%,#43b97f 60%,#3cab74 100%);box-shadow:inset 0 8px 0 rgba(255,255,255,.35),0 12px 0 rgba(46,138,92,.5),0 22px 34px rgba(46,138,92,.3);position:relative;transform:rotate(2deg)}
+.machine.shake{animation:shake .5s}
+@keyframes shake{0%,100%{transform:rotate(2deg)}20%{transform:rotate(-3deg) translateX(-1vw)}40%{transform:rotate(5deg) translateX(1vw)}60%{transform:rotate(-2deg)}80%{transform:rotate(4deg)}}
+.m-bumps{position:absolute;right:4vh;top:2.2vh;display:flex;gap:1.2vh}
+.m-bump{width:2.3vh;height:2.3vh;border-radius:50%;background:#fff}
+.m-bump.a{background:var(--amber)}
+.m-plate{position:absolute;left:10%;right:10%;top:6.6vh;height:7vh;border-radius:2.4vh;background:rgba(46,138,92,.55);box-shadow:inset 0 4px 7px rgba(0,0,0,.14);color:#fff;font-family:"Jua";font-size:3.4vh;letter-spacing:1.3vh;display:flex;align-items:center;justify-content:center}
+.m-eyes{position:absolute;left:0;right:0;top:-3.4vh;display:flex;justify-content:center;gap:6vh}
+.m-eyes i{width:5.4vh;height:5.4vh;border-radius:50%;background:#fff;border:4px solid #2a201d;position:relative}
+.m-eyes i::after{content:"";position:absolute;width:2.2vh;height:2.2vh;border-radius:50%;background:#c0392b;left:50%;top:50%;transform:translate(-50%,-50%)}
+.m-slot{position:absolute;left:12%;right:12%;bottom:3.6vh;height:4.6vh;border-radius:2vh;background:#26473a;box-shadow:inset 0 6px 9px rgba(0,0,0,.5)}
+.m-crank{position:absolute;right:-3vh;top:8.4vh;width:3vh;height:8.6vh;border-radius:1.6vh;background:var(--amber);box-shadow:0 5px 0 var(--amber-d)}
+.m-crank::before{content:"";position:absolute;left:50%;top:-2.6vh;transform:translateX(-50%);width:4.4vh;height:4.4vh;border-radius:50%;background:var(--amber);box-shadow:0 4px 0 var(--amber-d)}
+.a-card{position:absolute;left:50%;top:50%;width:min(26vw,46vh);background:var(--cream);border-radius:3.4vh;padding:2.8vh 2vw 3.2vh;text-align:center;box-shadow:0 14px 24px rgba(58,46,42,.16);transform:translate(-50%,6vh) rotate(-3deg);opacity:0;transition:transform .45s cubic-bezier(.2,1.4,.4,1),opacity .2s;z-index:2}
+.a-card.out{transform:translate(-50%,12vh) rotate(-3deg);opacity:1}
+.a-text{font-family:"Jua";font-size:7.6vh;margin-top:1.2vh}
+.stamp{position:absolute;right:-2.4vh;top:-3vh;font-family:"Jua";font-size:4.4vh;padding:.4vh 2.2vh;border-radius:1.6vh;border:.7vh solid;background:#fff;transform:rotate(-14deg);animation:thump .3s ease-out}
+.stamp.ok{color:var(--green-d);border-color:var(--green-d)}
+.stamp.re{color:var(--red-d);border-color:var(--red-d)}
+@keyframes thump{from{transform:rotate(-14deg) scale(2.4);opacity:0}to{transform:rotate(-14deg) scale(1);opacity:1}}
+
+/* 아래 단서 수첩 */
+.clues{position:fixed;left:3.4vw;right:3.4vw;bottom:2vh;height:9vh;background:rgba(255,253,246,.92);border-radius:2.6vh;box-shadow:0 5px 0 rgba(58,46,42,.07);display:flex;align-items:center;gap:1vw;padding:0 1.6vw;z-index:4}
+.clues .lbl{font-family:"Jua";font-size:2.5vh;white-space:nowrap}
+.clues .slot{flex:1;font-family:"Jua";font-size:2.2vh;text-align:center;border:2.5px dashed #c9bfb0;border-radius:1.4vh;padding:.9vh .4vw;color:#b5a99a;white-space:nowrap;overflow:hidden}
+.clues .slot.got{border:2.5px solid var(--green);color:var(--green-d);background:#eefaf2}
+.clues .slot.fixed{border-color:var(--red);color:var(--red-d);background:#fdf0ef}
+
+/* 장면 화면 */
+.scene{flex-direction:column;align-items:center;justify-content:center;gap:2.2vh;text-align:center}
+.scene .pic{max-height:48vh;max-width:66vw;border-radius:3vh;border:.8vh solid var(--cream);box-shadow:0 12px 0 rgba(58,46,42,.06),0 6px 26px rgba(46,138,92,.18)}
+.scene .title{font-family:"Jua";font-size:6vh;line-height:1.2}
+.scene .sub{font-size:2.8vh;line-height:1.6;font-weight:600;max-width:70vw}
+.scene .sub b{color:var(--green-d)}
+
+/* 정체 맞추기 */
+.board{gap:4vw;align-items:center;justify-content:center}
+.sil{width:44vh;height:40vh;border-radius:3.6vh;overflow:hidden;border:.8vh solid var(--cream);box-shadow:0 12px 0 rgba(58,46,42,.06);position:relative;background:#222}
+.sil img{width:100%;height:100%;object-fit:cover;filter:brightness(0);transition:filter 1.2s}
+.sil.open img{filter:none}
+.sil .q{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:"Jua";font-size:16vh;color:#fff;opacity:.9;transition:opacity .6s}
+.sil.open .q{opacity:0}
+.board .right{max-width:44vw;text-align:left}
+.board .title{font-family:"Jua";font-size:5.4vh;line-height:1.25}
+.board ul{list-style:none;margin-top:2.2vh;display:grid;grid-template-columns:1fr 1fr;gap:1.2vh 1.4vw}
+.board li{font-family:"Jua";font-size:3vh;background:rgba(255,253,246,.9);border-radius:1.6vh;padding:1vh 1.6vh;box-shadow:0 3px 0 rgba(58,46,42,.06)}
+.board li.fixed{color:var(--red-d)}
+.board .row{justify-content:flex-start;margin-top:3vh}
+
+/* 팝업 */
+.overlay{position:fixed;inset:0;background:rgba(40,34,30,.5);display:flex;align-items:center;justify-content:center;z-index:20}
+.pop{background:var(--cream);border-radius:4.4vh;padding:3vh 3vw 3.6vh;text-align:center;max-width:72vw;box-shadow:0 16px 0 rgba(0,0,0,.08);animation:popin .35s cubic-bezier(.2,1.5,.4,1)}
+@keyframes popin{from{transform:scale(.6);opacity:0}to{transform:scale(1);opacity:1}}
+.pop img.big{max-height:42vh;max-width:58vw;border-radius:2.6vh;display:block;margin:1.8vh auto 0}
+.pop .title{font-family:"Jua";font-size:5vh;margin-top:1.4vh}
+.pop .sub{font-size:2.7vh;font-weight:600;line-height:1.6;margin-top:.8vh}
+.pop .row{margin-top:2.4vh}
+.leader{display:flex;align-items:center;gap:2vw;margin-top:2vh;text-align:left}
+.leader img{width:30vh;height:20vh;object-fit:cover;border-radius:2vh;border:.6vh solid #fff;box-shadow:0 4px 12px rgba(58,46,42,.15)}
+.leader .say{font-family:"Jua";font-size:3.6vh;line-height:1.4}
+.leader .say small{display:block;font-size:2.2vh;color:#7a6a64}
+
+.cert .nameLine{font-family:"Jua";font-size:3.8vh}
+.cert .nameLine span{display:inline-block;min-width:22vw;border-bottom:4px solid var(--ink)}
+.promise{font-family:"Jua";font-size:3.2vh;background:rgba(255,255,255,.8);border-radius:999px;padding:1.2vh 3.6vh;color:var(--green-d)}
+.keys{position:fixed;right:3.4vw;bottom:11.6vh;font-size:1.6vh;color:rgba(58,46,42,.4);z-index:5}
+</style></head>
+<body>
+<div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div>
+
+<header>
+  <div style="display:flex;align-items:center;gap:1.4vw"><button class="home" onclick="restart()" title="첫 화면으로">🏠</button><h1>👾 답변 괴물 토벌 작전</h1></div>
+  <div class="hud">
+    <div class="pill who"><div class="face"><img id="whoImg" src="img/ev_full.jpg" alt=""></div><span id="whoTxt">괴물 정체 ???</span></div>
+    <div class="pill hearts" id="hearts"></div>
+    <div class="pill" id="counter">작전 준비</div>
+  </div>
+</header>
+
+<main>
+  <!-- 괴물 등장 -->
+  <section class="view scene on" id="v-intro">
+    <img class="pic" src="img/hunt_shadow.jpg" alt="정체불명의 괴물" style="max-height:44vh">
+    <div class="title">불쑥! 정체불명의 답변 괴물이 나타났다!</div>
+    <div class="sub">괴물은 자기에 대한 질문에 답을 하지만, 가끔 <b>그럴듯한 틀린 답</b>으로 정체를 숨겨요.<br>친구들의 <b>목격 증언</b>과 내 답을 비교해서 <b>단서</b>를 모으고, 괴물의 정체를 밝혀요!</div>
+    <div class="row"><button class="btn" onclick="go(1)">토벌 시작!</button></div>
+  </section>
+
+  <!-- 대결 -->
+  <section class="view stage" id="v-stage">
+    <div class="q-col">
+      <div class="q-card">
+        <span class="chip amber" id="qChip">문제 카드</span>
+        <div class="q-text" id="qText"></div>
+        <div class="evi">
+          <div class="witness"><div class="wface"><img id="wImg" alt=""></div>
+            <div class="bubble"><span class="who-n" id="wName"></span><span id="wSay"></span></div></div>
+          <div class="photo"><span class="tag">목격 사진</span><img id="pImg" alt=""></div>
+        </div>
+      </div>
+      <div class="status" id="status">우리 답을 먼저 말해요</div>
+      <div class="row" id="optRow"></div>
+      <div class="mine hidden" id="mine"></div>
+      <button class="btn" id="drawBtn" onclick="draw()">괴물 답 소환하기</button>
+      <div class="row hidden" id="stampRow">
+        <button class="btn" onclick="stamp('ok')">합격 도장</button>
+        <button class="btn red" onclick="stamp('re')">다시 도장</button>
+      </div>
+      <div class="row hidden" id="nextRow"><button class="btn amber" id="nextBtn" onclick="next()">다음 대결 ▶</button></div>
+    </div>
+    <div class="m-col">
+      <div class="machine" id="machine">
+        <div class="m-eyes"><i></i><i></i></div>
+        <div class="m-bumps"><span class="m-bump"></span><span class="m-bump a"></span><span class="m-bump"></span></div>
+        <div class="m-plate">답변 괴물</div>
+        <div class="m-slot"></div>
+        <div class="m-crank"></div>
+      </div>
+      <div class="a-card" id="aCard">
+        <span class="chip green">괴물의 답</span>
+        <div class="a-text" id="aText"></div>
+        <div id="stampSlot"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 단서로 정체 맞추기 -->
+  <section class="view board" id="v-board">
+    <div class="sil" id="sil"><img src="img/ev_full.jpg" alt="괴물"><div class="q">?</div></div>
+    <div class="right">
+      <div class="title" id="boardTitle">모은 단서로 괴물의 정체를 밝혀라!</div>
+      <ul id="boardList"></ul>
+      <div class="row" id="boardBtns"><button class="btn red" onclick="unmask()">정체 공개!</button></div>
+    </div>
+  </section>
+
+  <!-- 토벌 성공 -->
+  <section class="view scene" id="v-success">
+    <img class="pic" src="img/success.jpg" alt="토벌 성공">
+    <div class="title">토벌 성공! 마을을 지켰어요</div>
+    <div class="sub">괴물은 그럴듯한 답을 내놓지만 가끔 틀려요.<br><b>내가 아는 답과 비교</b>하고, 이상하면 <b>어른에게 물어봐요!</b></div>
+    <div class="row"><button class="btn amber" onclick="go(N+3)">토벌 성공 보상 받기 ▶</button></div>
+  </section>
+
+  <!-- 성공 보상 -->
+  <section class="view scene cert" id="v-cert">
+    <img class="pic" src="img/badge.png" alt="토벌 1급" style="border:0;box-shadow:none;background:transparent;max-height:44vh">
+    <div class="nameLine">괴물 토벌대 <span>&nbsp;</span></div>
+    <div class="promise">약속! 이상한 답이 나오면 → 어른에게 물어보기</div>
+    <div class="row"><button class="btn ghost" onclick="restart()">처음부터</button></div>
+  </section>
+</main>
+
+<div class="clues" id="clues"></div>
+<div id="overlay" class="overlay hidden"></div>
+<div class="keys">🏠/Esc 첫 화면 · → 다음 · ← 이전 · Space 소환 · O 합격 · X 다시</div>
+
+<script>
+/* ===== 문항: 괴물에 대한 질문 · 목격 증언 · 목격 사진 =====
+   a: 괴물이 내놓는 답 / trap: 그럴듯하게 틀린 답 / truth: 대장이 알려주는 진짜 정보 / clue: 단서 수첩에 적히는 말 */
+const W = { 치이카와:'img/f_chiikawa.jpg', 하치와레:'img/f_hachiware.jpg', 우사기:'img/f_usagi.jpg' };
+const CARDS = [
+  { q:"괴물의 눈은 무슨 색?",        w:"하치와레", say:"눈이 빨갛게 번쩍했어!",       photo:"img/ev_body_s.jpg",    a:"빨간색",      clue:"빨간 눈", opts:["빨간색","파란색","노란색"] },
+  { q:"괴물의 몸은 무슨 색?",        w:"치이카와", say:"몸이… 회색이었어…",             photo:"img/ev_body_s.jpg",    a:"회색",        clue:"회색 몸", opts:["분홍색","회색","초록색"] },
+  { q:"괴물 머리 위 귀는 몇 개?",    w:"우사기",   say:"꼬불꼬불 귀가 두 개!",           photo:"img/ev_ears_s.jpg",    a:"2개",         clue:"꼬불 귀 2개", opts:["1개","2개","3개"] },
+  { q:"괴물 귀는 무슨 색?",          w:"하치와레", say:"귀는 빨간색이었어",             photo:"img/ev_ears_s.jpg",    a:"빨간색",      clue:"빨간 귀", opts:["하얀색","파란색","빨간색"] },
+  { q:"괴물 머리 무늬는 무슨 색?",    w:"치이카와", say:"머리에 까만 무늬가 있었어…",     photo:"img/ev_body_s.jpg",    a:"까만색",      clue:"까만 머리 무늬", opts:["까만색","노란색","하얀색"] },
+  { q:"괴물 꼬리는 어떤 모양?",      w:"우사기",   say:"물고기 꼬리였어!",               photo:"img/ev_tail_s.jpg",    a:"물고기 꼬리", clue:"물고기 꼬리", opts:["토끼 꼬리","물고기 꼬리","여우 꼬리"] },
+  { q:"괴물 꼬리는 무슨 색?",        w:"하치와레", say:"꼬리가 빨간 비늘이었어",         photo:"img/ev_tail_s.jpg",    a:"초록색", trap:true, truth:"빨간색", clue:"빨간 비늘 꼬리", opts:["빨간색","초록색","보라색"] },
+  { q:"괴물을 따라다니는 부하는 몇 마리?", w:"치이카와", say:"작은 부하가 둘… 따라다녔어", photo:"img/ev_minions_s.jpg", a:"3마리", trap:true, truth:"2마리", clue:"부하 2마리", opts:["1마리","2마리","3마리"] },
+];
+/* ================================================================ */
+const N = CARDS.length;
+const S = { v:0, drawn:Array(N).fill(false), st:Array(N).fill(null), got:Array(N).fill(false), my:Array(N).fill(null), hearts:3, unmasked:false };
+const $ = id => document.getElementById(id);
+const nGot = () => S.got.filter(Boolean).length;
+
+function hud(){
+  $('hearts').innerHTML = [0,1,2].map(i=>`<span class="${i<S.hearts?'':'lost'}">❤️</span>`).join('');
+  $('counter').textContent = (S.v>=1&&S.v<=N) ? `대결 ${S.v} / ${N}` : (S.v===0?'작전 준비':'작전 완료');
+  const g=nGot();
+  $('whoImg').style.filter = S.unmasked ? 'none' : `brightness(${(g/N*0.55).toFixed(2)})`;
+  $('whoTxt').textContent = S.unmasked ? '괴물 정체 발견!' : `괴물 정체 ??? · 단서 ${g}/${N}`;
+  $('clues').innerHTML = `<span class="lbl">🔎 단서 수첩</span>` + CARDS.map((c,k)=>
+    `<span class="slot ${S.got[k]?(c.trap?'got fixed':'got'):''}">${S.got[k]?c.clue:'?'}</span>`).join('');
+}
+function show(id){ document.querySelectorAll('.view').forEach(v=>v.classList.toggle('on', v.id===id)); }
+
+function render(){
+  hud();
+  $('clues').classList.toggle('hidden', S.v===0 || S.v>=N+2);
+  if (S.v===0) return show('v-intro');
+  if (S.v===N+1) return renderBoard();
+  if (S.v===N+2) return show('v-success');
+  if (S.v===N+3) return show('v-cert');
+  show('v-stage');
+  const k=S.v-1, c=CARDS[k], d=S.drawn[k], st=S.st[k];
+  $('qChip').textContent = `문제 카드 ${S.v}`;
+  $('qText').textContent = c.q;
+  $('wImg').src = W[c.w]; $('wName').textContent = `${c.w}의 목격 증언`; $('wSay').textContent = `“${c.say}”`;
+  $('pImg').src = c.photo;
+  $('aText').textContent = c.a;
+  $('aCard').classList.toggle('out', d);
+  const my=S.my[k];
+  $('optRow').innerHTML = my ? '' : c.opts.map(o=>`<button class="opt" onclick="pick('${o}')">${o}</button>`).join('');
+  $('optRow').classList.add('hidden');
+  $('mine').classList.add('hidden');
+  $('mine').innerHTML = my ? `우리 답 <b>${my}</b>` : '';
+  $('drawBtn').classList.toggle('hidden', d);
+  $('stampRow').classList.toggle('hidden', !d || !!st);
+  $('nextRow').classList.toggle('hidden', !S.got[k]);
+  $('nextBtn').textContent = S.v===N ? '단서로 정체 밝히기 ▶' : '다음 대결 ▶';
+  $('stampSlot').innerHTML = st ? `<div class="stamp ${st}">${st==='ok'?'합격':'다시'}</div>` : '';
+  const s=$('status'); s.className='status';
+  if (!d) s.textContent='증언을 보고 우리 답을 먼저 말해요';
+  else if (!st) s.textContent='괴물의 답, 합격일까? 다시일까?';
+  else if (S.got[k] && !c.trap) s.textContent=`합격! 단서 «${c.clue}» 획득`;
+  else if (S.got[k] && c.trap) s.textContent=`대장 확인! 진짜 단서 «${c.clue}» 획득`;
+  else if (st==='re' && !c.trap) { s.textContent='내가 아는 답과 같아요? 같으면 합격이에요'; s.classList.add('warn'); }
+  else { s.textContent='괴물에게 속았어요… 한 번 더 비교해요'; s.classList.add('bad'); }
+}
+function renderBoard(){
+  show('v-board');
+  $('sil').classList.toggle('open', S.unmasked);
+  $('boardList').innerHTML = CARDS.map((c,k)=> S.got[k] ? `<li class="${c.trap?'fixed':''}">✔ ${c.clue}</li>` : `<li style="opacity:.4">? 아직 못 찾은 단서</li>`).join('');
+  $('boardTitle').textContent = S.unmasked ? '정체 발견! 이 괴물이 답을 틀리게 했어요' : '모은 단서로 괴물의 정체를 밝혀라!';
+  $('boardBtns').innerHTML = S.unmasked
+    ? `<button class="btn amber" onclick="go(N+2)">토벌하러 가기 ▶</button>`
+    : `<button class="btn red" onclick="unmask()">정체 공개!</button>`;
+}
+function unmask(){ S.unmasked=true; render(); }
+function pick(o){ const k=S.v-1; if(k<0||k>=N) return; S.my[k]=o; render(); }
+function draw(){
+  const k=S.v-1; if(k<0||k>=N||S.drawn[k]) return;
+  const m=$('machine'); m.classList.remove('shake'); void m.offsetWidth; m.classList.add('shake');
+  setTimeout(()=>{ S.drawn[k]=true; render(); }, 450);
+}
+function stamp(kind){
+  const k=S.v-1; if(k<0||k>=N||!S.drawn[k]||S.st[k]) return;
+  const c=CARDS[k]; S.st[k]=kind;
+  if (kind==='ok' && !c.trap){ S.got[k]=true; render(); return; }
+  render();
+  if (kind==='re' && !c.trap) setTimeout(()=>{ S.st[k]=null; render(); $('status').textContent='내가 아는 답과 같아요? 같으면 합격이에요'; $('status').classList.add('warn'); }, 1400);
+  if (kind==='re' && c.trap) setTimeout(()=>popup('caught'), 600);
+  if (kind==='ok' && c.trap) setTimeout(()=>popup('fail'), 600);
+}
+function popup(type){
+  const k=S.v-1, c=CARDS[k], o=$('overlay');
+  if (type==='caught'){
+    o.innerHTML = `<div class="pop"><span class="chip red">답변 틀리기 잡았다!</span>
+      <div class="title">불쑥! 괴물이 정체를 숨기려고 틀린 답을 냈어요</div>
+      <div class="sub">괴물의 답 «${c.a}» ≠ ${c.w}의 증언 “${c.say}”<br>이상한 답은? → <b>어른(토벌대 대장)에게 물어봐요!</b></div>
+      <div class="row"><button class="btn" onclick="popup('leader')">대장에게 물어보기</button></div></div>`;
+  } else if (type==='leader'){
+    S.got[k]=true; hud();
+    o.innerHTML = `<div class="pop"><span class="chip green">토벌대 대장 확인</span>
+      <div class="leader"><img src="${c.photo}" alt=""><div class="say"><small>${c.q}</small>진짜는 «${c.truth}»!<br>단서 «${c.clue}» 수첩에 적기</div></div>
+      <div class="row"><button class="btn" onclick="closePop();render()">계속 토벌!</button></div></div>`;
+  } else {
+    S.hearts=Math.max(0,S.hearts-1); hud();
+    o.innerHTML = `<div class="pop"><span class="chip red">토벌 실패 · 하트 −1</span>
+      <img class="big" src="img/fail_s.jpg" alt="토벌 실패">
+      <div class="title">앗, 괴물의 거짓말에 속았어요!</div>
+      <div class="sub">괴물의 답 «${c.a}» — ${c.w}의 증언 “${c.say}”와 정말 같나요?</div>
+      <div class="row"><button class="btn amber" onclick="retry()">다시 비교하기</button></div></div>`;
+  }
+  o.classList.remove('hidden');
+}
+function closePop(){ $('overlay').classList.add('hidden'); }
+function retry(){ S.st[S.v-1]=null; closePop(); render(); }
+function go(v){ closePop(); S.v=Math.max(0,Math.min(N+3,v)); render(); }
+function next(){ if(S.v>=1&&S.v<=N&&!S.got[S.v-1]) return; go(S.v+1); }
+function prev(){ go(S.v-1); }
+function restart(){ S.drawn.fill(false); S.st.fill(null); S.got.fill(false); S.my.fill(null); S.hearts=3; S.unmasked=false; go(0); }
+
+document.addEventListener('keydown',e=>{
+  if(!$('overlay').classList.contains('hidden')){ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); const b=$('overlay').querySelector('button'); b&&b.click(); } return; }
+  if(e.key==='Home'||e.key==='Escape') restart(); else if(e.key==='ArrowRight') next(); else if(e.key==='ArrowLeft') prev();
+  else if(e.key===' '){ e.preventDefault(); draw(); }
+  else if(e.key.toLowerCase()==='o') stamp('ok'); else if(e.key.toLowerCase()==='x') stamp('re');
+});
+
+/* 캡처용: index.html#cap=이름 */
+function upto(n){ for(let k=0;k<n;k++){ S.my[k]=CARDS[k].trap?CARDS[k].truth:CARDS[k].a; S.drawn[k]=true; S.st[k]=CARDS[k].trap?'re':'ok'; S.got[k]=true; } }
+const CAP = {
+  '01_intro':   ()=>go(0),
+  '02_ask':     ()=>go(1),
+  '02b_picked': ()=>{ S.my[0]='빨간색'; go(1); },
+  '02c_compare':()=>{ S.my[0]='빨간색'; S.drawn[0]=true; go(1); },
+  '03_pass':    ()=>{ S.my[0]='빨간색'; S.drawn[0]=true; S.st[0]='ok'; S.got[0]=true; go(1); },
+  '04_clues':   ()=>{ upto(6); go(6); },
+  '05_trap':    ()=>{ upto(6); S.my[6]='빨간색'; S.drawn[6]=true; go(7); },
+  '06_caught':  ()=>{ upto(6); S.my[6]='빨간색'; S.drawn[6]=true; S.st[6]='re'; go(7); popup('caught'); },
+  '07_leader':  ()=>{ upto(6); S.my[6]='빨간색'; S.drawn[6]=true; S.st[6]='re'; go(7); popup('leader'); },
+  '08_fail':    ()=>{ upto(7); S.my[7]='2마리'; S.drawn[7]=true; S.st[7]='ok'; go(8); popup('fail'); },
+  '09_board':   ()=>{ upto(8); S.hearts=2; go(N+1); },
+  '10_unmask':  ()=>{ upto(8); S.hearts=2; S.unmasked=true; go(N+1); },
+  '11_success': ()=>{ upto(8); S.hearts=2; S.unmasked=true; go(N+2); },
+  '12_reward':  ()=>{ upto(8); S.hearts=2; S.unmasked=true; go(N+3); },
+};
+const m=location.hash.match(/cap=(\w+)/);
+if(m&&CAP[m[1]]){ const st=document.createElement('style'); st.textContent='*{animation:none!important;transition:none!important}.keys{display:none}'; document.head.appendChild(st); CAP[m[1]](); }
+else render();
+</script>
+</body></html>
